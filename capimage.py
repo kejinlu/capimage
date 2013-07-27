@@ -7,7 +7,6 @@ import argparse
 from PIL import Image
 import glob
 
-
 def update_progress(progress):
     stdout.write('\r[{0}] {1}%'.format('#'*(progress/2), progress))
     stdout.flush()
@@ -21,12 +20,12 @@ def cap_image(image,capinsets,isretina=False):
 	right_inset = capinsets[3]
 
 	if isretina:
-		horizontal_fill_width*=2
-		vertical_fill_height*=2
-		top_inset*=2
-		left_inset*=2
-		bottom_inset*=2
-		right_inset*=2
+		horizontal_fill_width *= 2
+		vertical_fill_height *= 2
+		top_inset *= 2
+		left_inset *= 2
+		bottom_inset *= 2
+		right_inset *= 2
 
 	source_image_width = image.size[0]
 	source_image_height = image.size[1];
@@ -37,14 +36,38 @@ def cap_image(image,capinsets,isretina=False):
 	target_image = Image.new("RGBA", (target_image_width, target_image_height),"red")
 	
 	top_left_image = im.crop((0, 0, left_inset, top_inset))
-	top_middle_image = im.crop((left_inset, 0, left_inset + horizontal_fill_width, top_inset))
-	top_right_image = im.crop((source_image_width - right_inset,0,source_image_width,top_inset))
-	middle_left_image = im.crop((0, top_inset, left_inset, top_inset + vertical_fill_height))
-	middle_middle_image = im.crop((left_inset, top_inset, left_inset + horizontal_fill_width, top_inset + vertical_fill_height))
-	middle_right_image = im.crop((source_image_width - right_inset,top_inset,source_image_width,top_inset+vertical_fill_height))
-	bottom_left_image = im.crop((0,source_image_height - bottom_inset,left_inset,source_image_height))
-	bottom_middle_image = im.crop((left_inset,source_image_height - bottom_inset,left_inset+horizontal_fill_width,source_image_height))
-	bottom_right_image = im.crop((source_image_width-right_inset,source_image_height- bottom_inset,source_image_width,source_image_height))
+	top_middle_image = im.crop((left_inset, 
+								0, 
+								left_inset + horizontal_fill_width, 
+								top_inset))
+	top_right_image = im.crop((source_image_width - right_inset,
+								0,
+								source_image_width,
+								top_inset))
+	middle_left_image = im.crop((0, 
+								top_inset, 
+								left_inset, 
+								top_inset + vertical_fill_height))
+	middle_middle_image = im.crop((left_inset, 
+									top_inset, 
+									left_inset + horizontal_fill_width, 
+									top_inset + vertical_fill_height))
+	middle_right_image = im.crop((source_image_width - right_inset,
+								top_inset,
+								source_image_width,
+								top_inset+vertical_fill_height))
+	bottom_left_image = im.crop((0,
+								source_image_height - bottom_inset,
+								left_inset,
+								source_image_height))
+	bottom_middle_image = im.crop((left_inset,
+									source_image_height - bottom_inset,
+									left_inset+horizontal_fill_width,
+									source_image_height))
+	bottom_right_image = im.crop((source_image_width-right_inset,
+									source_image_height- bottom_inset,
+									source_image_width,
+									source_image_height))
 	
 	
 	target_image.paste(top_left_image,(0,0))
@@ -116,18 +139,26 @@ def detect_image(image,isretina=False):
 	print "建议capinsts"
 	print "(%d,%d,%d,%d)" %(max_repeatedrow_interval[0],max_repeatedcol_interval[0],source_image_height-1- max_repeatedrow_interval[1],source_image_width -1 -max_repeatedcol_interval[1])
 
+
+
+
+'''
+
+'''
+
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest="subparser_name")
 parser_image_detect = subparsers.add_parser("detect")
-parser_image_detect.add_argument('imagefiles',nargs='+')
+parser_image_detect.add_argument('source_file',nargs='+')
 parser_image_gen = subparsers.add_parser("gen")
 parser_image_gen.add_argument('-c','--capinsets',nargs=4,type=int,metavar=('top', 'left', 'bottom', 'right'))
-parser_image_gen.add_argument('imagefile',nargs='+')
+parser_image_gen.add_argument('-t','--target_directory',metavar='target_directory')
+parser_image_gen.add_argument('source_file',nargs='+')
 args=parser.parse_args()
 
 print args.capinsets
 print args.subparser_name
-for imagefile in args.imagefiles:
+for imagefile in args.source_file:
 	imagefile = path.expanduser(imagefile)
 	for f in glob.iglob(imagefile):
 		print f
