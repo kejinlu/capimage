@@ -12,7 +12,7 @@ shutil.copyfile('capimage.py', 'scripts/capimage')
 setup(
     name = 'capimage',
     version = '0.1',
-    scripts=['capimage.py'],
+    scripts=['scripts/capimage'],
     author = '卢克进',
     author_email = 'kejinlu@gmail.com',
     url = 'https://github.com/kejinlu/capimage',
