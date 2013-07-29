@@ -191,19 +191,21 @@ for filepath in args.source_file:
 				print "Suggested Cap Insets:%s" % (detection_info['suggested_capinsets'],)
 			
 			if subparser_name == 'gen':
+				print "******************************************"
+				print "Generate resizable image for '%s'" % (f,)
 				args_dic = vars(args)
 				if 'capinsets' in args_dic and args_dic['capinsets'] is not None:
 					capinsets = tuple(i for i in args.capinsets)
+					print "Using cap insets with provided:%s"%(capinsets,)
 				else:
 					detection_info = detect_image(image,is_retina_image)
 					capinsets = detection_info['suggested_capinsets']
+					print "Cap insets are not provided,using the results with detection:%s" %(capinsets,)
 
 				if 'target_directory' in args_dic and args_dic['target_directory'] is not None:
 					target_directory = args.target_directory
 				else:
 					target_directory = '.'
-
-				print capinsets
 
 				target_image = cap_image(image, capinsets,is_retina_image)
 				filename = path.split(f)[1]
@@ -212,11 +214,11 @@ for filepath in args.source_file:
 				else:
 					sep = '.'
 				
-				filenameseps = filename.rsplit(sep,1)
+				filename_components = filename.rsplit(sep,1)
 
 
 				capstring = '-'.join("%d"%i for i in capinsets)
-				newfilename = '%s-%s%s%s'%(filenameseps[0],capstring,sep,filenameseps[1])
+				newfilename = '%s-%s%s%s'%(filename_components[0], capstring, sep, filename_components[1])
 				target_file_path = path.join(target_directory,newfilename)
 				target_image.save(target_file_path,image.format)
 
