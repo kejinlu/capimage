@@ -3,10 +3,12 @@
 
 from sys import stdout
 from os import path
+from glob import iglob
+from math import ceil
+from itertools import izip
 import argparse
+
 from PIL import Image
-import glob
-import math
 
 def check_image_with_pil(path):
 	try:
@@ -45,37 +47,37 @@ def cap_image(source_image, capinsets, isretina=False):
 
 	top_left_image = source_image.crop((0, 0, left_inset, top_inset))
 	top_middle_image = source_image.crop((left_inset, 
-								0, 
-								left_inset + horizontal_fill_width, 
-								top_inset))
+										0, 
+										left_inset + horizontal_fill_width, 
+										top_inset))
 	top_right_image = source_image.crop((source_image_width - right_inset,
-								0,
-								source_image_width,
-								top_inset))
+										0,
+										source_image_width,
+										top_inset))
 	middle_left_image = source_image.crop((0, 
-								top_inset, 
-								left_inset, 
-								top_inset + vertical_fill_height))
+										top_inset, 
+										left_inset, 
+										top_inset + vertical_fill_height))
 	middle_middle_image = source_image.crop((left_inset, 
-									top_inset, 
-									left_inset + horizontal_fill_width, 
-									top_inset + vertical_fill_height))
+											top_inset, 
+											left_inset + horizontal_fill_width, 
+											top_inset + vertical_fill_height))
 	middle_right_image = source_image.crop((source_image_width - right_inset,
-								top_inset,
-								source_image_width,
-								top_inset + vertical_fill_height))
+										top_inset,
+										source_image_width,
+										top_inset + vertical_fill_height))
 	bottom_left_image = source_image.crop((0,
-								source_image_height - bottom_inset,
-								left_inset,
-								source_image_height))
+										source_image_height - bottom_inset,
+										left_inset,
+										source_image_height))
 	bottom_middle_image = source_image.crop((left_inset,
-									source_image_height - bottom_inset,
-									left_inset + horizontal_fill_width,
-									source_image_height))
+											source_image_height - bottom_inset,
+											left_inset + horizontal_fill_width,
+											source_image_height))
 	bottom_right_image = source_image.crop((source_image_width - right_inset,
-									source_image_height - bottom_inset,
-									source_image_width,
-									source_image_height))
+											source_image_height - bottom_inset,
+											source_image_width,
+											source_image_height))
 	
 	
 	target_image.paste(top_left_image, (0, 0))
@@ -91,30 +93,26 @@ def cap_image(source_image, capinsets, isretina=False):
 	return target_image
 
 
-
-
-
 def detect_image(image, isretina=False):
 	dataList = list(image.getdata())
 	source_image_width = image.size[0]
 	source_image_height = image.size[1];
 	
-	rowlist = []; #rowlist保存了每一行的像素点
+	rowlist = []; #keep pixels for each row
 	for i in xrange(source_image_height):
 		rowlist.append([])
 
-	columnlist = [] #columnlist保存了每一列的像素点
+	columnlist = [] #keep pixels for each column
 	for i in xrange(source_image_width):
 		columnlist.append([])
 
-	#填充rowlist和columnlist，使用整除和余数来构造list索引
 	for i in xrange(len(dataList)):
 		data = dataList[i]
 		rowlist[i / source_image_width].append(data)
 		columnlist[i % source_image_width].append(data)
 	
-	repeatedrow_intervals = [] #repeatedrow_intervals记录搜索像素值相同的行的范围集合
-	max_repeatedrow_interval = [0, 0] #记录repeatedrow_intervals中
+	repeatedrow_intervals = []
+	max_repeatedrow_interval = [0, 0]
 	for i in xrange(source_image_height - 1):
 		if rowlist[i]==rowlist[i + 1]:
 			rowpair = [i, i + 1]
@@ -144,7 +142,7 @@ def detect_image(image, isretina=False):
 							source_image_height - 1 - max_repeatedrow_interval[1],
 							source_image_width - 1 - max_repeatedcol_interval[1])
 	if isretina:
-			capinsets = tuple(int(math.ceil(capinset/2.0)) for capinset in capinsets)
+			capinsets = tuple(int(ceil(capinset/2.0)) for capinset in capinsets)
 
 	detection_info = {
 	'repeatedrow_intervals' : repeatedrow_intervals,
@@ -157,21 +155,21 @@ def detect_image(image, isretina=False):
 	return detection_info
 
 
-
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest="subparser_name")
-parser_image_detect = subparsers.add_parser("detect")
+parser_image_detect = subparsers.add_parser("detect",help='Make a detection for the source image, get the suggested cap insets')
 parser_image_detect.add_argument('source_file',nargs='+')
 parser_image_gen = subparsers.add_parser("gen")
-parser_image_gen.add_argument('-c','--capinsets',dest='capinsets', nargs = 4,type = int,metavar=('top', 'left', 'bottom', 'right'))
-parser_image_gen.add_argument('-t','--target-directory',dest='target_directory',help='target_directory')
-parser_image_gen.add_argument('source_file',nargs='+')
+parser_image_gen.add_argument('-c','--capinsets',dest='capinsets', nargs = 4,type = int,metavar=('top', 'left', 'bottom', 'right') ,help='The cap insets for the resizable image')
+parser_image_gen.add_argument('-t','--target-directory',dest='target_directory',help='The directory where save the generated image')
+parser_image_gen.add_argument('source_file',nargs='+',help='The source image file paths')
 args=parser.parse_args()
 
 subparser_name = args.subparser_name
+capinsets_dic = {}
 for filepath in args.source_file:
 	filepath = path.expanduser(filepath)
-	for f in glob.iglob(filepath):
+	for f in iglob(filepath):
 		if check_image_with_pil(f):
 			is_retina_image = False
 			if '@2x.' in f:
@@ -198,16 +196,44 @@ for filepath in args.source_file:
 					capinsets = tuple(i for i in args.capinsets)
 					print "Using cap insets with provided:%s"%(capinsets,)
 				else:
-					detection_info = detect_image(image,is_retina_image)
-					capinsets = detection_info['suggested_capinsets']
+					if f in capinsets_dic:
+						capinsets = capinsets_dic[f]
+					else:
+						detection_info = detect_image(image,is_retina_image)
+						capinsets = detection_info['suggested_capinsets']
+						capinsets_dic[f] = capinsets
 					print "Cap insets are not provided,using the results with detection:%s" %(capinsets,)
+
+					if is_retina_image:
+						unretina_file = ''.join(f.rsplit('@2x',1))
+						if unretina_file in capinsets_dic:
+							paired_capinsets = capinsets_dic[unretina_file]
+						else:
+							if check_image_with_pil(unretina_file):
+								unretina_image = Image.open(unretina_file)
+								unretina_detection_info = detect_image(unretina_image,False)
+								paired_capinsets = unretina_detection_info['suggested_capinsets']
+								capinsets_dic[unretina_file] = paired_capinsets
+					else:
+						retina_file = '@2x.'.join(f.rsplit('.',1))
+						if retina_file in capinsets_dic:
+							paired_capinsets = capinsets_dic[retina_file]
+						else:
+							if check_image_with_pil(retina_file):
+								retina_image = Image.open(retina_file)
+								retina_detection_info = detect_image(retina_image,True)
+								paired_capinsets = retina_detection_info['suggested_capinsets']
+								capinsets_dic[retina_file] = paired_capinsets
+
+					final_capinsets = tuple(max(x, y) for x, y in izip(capinsets,paired_capinsets))
+
 
 				if 'target_directory' in args_dic and args_dic['target_directory'] is not None:
 					target_directory = args.target_directory
 				else:
 					target_directory = '.'
 
-				target_image = cap_image(image, capinsets,is_retina_image)
+				target_image = cap_image(image, final_capinsets,is_retina_image)
 				filename = path.split(f)[1]
 				if is_retina_image:
 					sep = '@2x.'
@@ -217,9 +243,9 @@ for filepath in args.source_file:
 				filename_components = filename.rsplit(sep,1)
 
 
-				capstring = '-'.join("%d"%i for i in capinsets)
+				capstring = '-'.join("%d"%i for i in final_capinsets)
 				newfilename = '%s-%s%s%s'%(filename_components[0], capstring, sep, filename_components[1])
-				target_file_path = path.join(target_directory,newfilename)
+				target_file_path = path.join(path.expanduser(target_directory),newfilename)
 				target_image.save(target_file_path,image.format)
 
 
