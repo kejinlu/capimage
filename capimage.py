@@ -10,6 +10,15 @@ import argparse
 
 from PIL import Image
 
+__author__ = "Luke"
+__copyright__ = "Copyright 2012, geeklu.com"
+__license__ = "BSD License"
+__version__ = "0.1.0"
+__maintainer__ = "Luke"
+__email__ = "kejinlu@gmail.com"
+__status__ = "Beta"
+
+
 def check_image_with_pil(path):
 	try:
 		Image.open(path)
@@ -155,110 +164,112 @@ def detect_image(image, isretina=False):
 	return detection_info
 
 
-parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(dest="subparser_name")
-parser_image_detect = subparsers.add_parser("detect",help='Make a detection for the source image, get the suggested cap insets')
-parser_image_detect.add_argument('source_file',nargs='+')
-parser_image_gen = subparsers.add_parser("gen")
-parser_image_gen.add_argument('-c','--capinsets',dest='capinsets', nargs = 4,type = int,metavar=('top', 'left', 'bottom', 'right') ,help='The cap insets for the resizable image')
-parser_image_gen.add_argument('-t','--target-directory',dest='target_directory',help='The directory where save the generated image')
-parser_image_gen.add_argument('source_file',nargs='+',help='The source image file paths')
-args=parser.parse_args()
 
-subparser_name = args.subparser_name
-capinsets_dic = {}
-for filepath in args.source_file:
-	filepath = path.expanduser(filepath)
-	for f in iglob(filepath):
-		if check_image_with_pil(f):
-			print '************************************'
-			print 'Image:%s'%(f,)
-			is_retina_image = False
-			if '@2x.' in f:
-				print 'This is a high-resolution image'
-				is_retina_image = True
-			else:
-				print 'This is a low-resolution image'
-
-			image = Image.open(f)
-			print "Image size:%sx%s"%(image.size[0],image.size[1])
-			
-			if subparser_name == 'detect':
-				print "Starting to detect..."
-				detection_info = detect_image(image,is_retina_image)
-				print "Repeated rows intervals:%s" % (detection_info['repeatedrow_intervals'],)
-				print "Max row interval:%s" % (detection_info['max_repeatedrow_interval'],)
-				print "Repeated columns intervals:%s" % (detection_info['repeatedcol_intervals'],)
-				print "Max column interval:%s" % (detection_info['max_repeatedcol_interval'],)
-				print "Suggested cap insets:%s" % (detection_info['suggested_capinsets'],)
-			
-			if subparser_name == 'gen':
-				print "Starting to generate resizable image..."
-				args_dic = vars(args)
-				if 'capinsets' in args_dic and args_dic['capinsets'] is not None:
-					capinsets = tuple(i for i in args.capinsets)
-					print "Using cap insets with provided:%s"%(capinsets,)
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
+	subparsers = parser.add_subparsers(dest="subparser_name")
+	parser_image_detect = subparsers.add_parser("detect",help='Make a detection for the source image, get the suggested cap insets')
+	parser_image_detect.add_argument('source_file',nargs='+',metavar='source file', help='The source image file paths')
+	parser_image_gen = subparsers.add_parser("gen")
+	parser_image_gen.add_argument('-c','--capinsets',dest='capinsets', nargs = 4,type = int,metavar=('top', 'left', 'bottom', 'right') ,help='The cap insets for the resizable image')
+	parser_image_gen.add_argument('-t','--target-directory',dest='target_directory', metavar='target_directory', help='The directory where save the generated image')
+	parser_image_gen.add_argument('source_file',nargs='+',metavar='source_file',help='The source image file paths')
+	args=parser.parse_args()
+	
+	subparser_name = args.subparser_name
+	capinsets_dic = {}
+	for filepath in args.source_file:
+		filepath = path.expanduser(filepath)
+		for f in iglob(filepath):
+			if check_image_with_pil(f):
+				print '************************************'
+				print 'Image:%s'%(f,)
+				is_retina_image = False
+				if '@2x.' in f:
+					print 'This is a high-resolution image'
+					is_retina_image = True
 				else:
-					print "Cap insets for the resizable image will be got from the result of the detection"
-					if f in capinsets_dic:
-						capinsets = capinsets_dic[f]
-					else:
-						detection_info = detect_image(image,is_retina_image)
-						capinsets = detection_info['suggested_capinsets']
-						capinsets_dic[f] = capinsets
-					print "Cap insets got from the results with detection:%s" %(capinsets,)
-
-					if is_retina_image:
-						unretina_file = ''.join(f.rsplit('@2x',1))
-						if unretina_file in capinsets_dic:
-							paired_capinsets = capinsets_dic[unretina_file]
-						else:
-							if check_image_with_pil(unretina_file):
-								unretina_image = Image.open(unretina_file)
-								unretina_detection_info = detect_image(unretina_image,False)
-								paired_capinsets = unretina_detection_info['suggested_capinsets']
-								capinsets_dic[unretina_file] = paired_capinsets
-						print 'The cap insets of the paired low-resolution image is:%s' %(paired_capinsets,)
-					else:
-						retina_file = '@2x.'.join(f.rsplit('.',1))
-						if retina_file in capinsets_dic:
-							paired_capinsets = capinsets_dic[retina_file]
-						else:
-							if check_image_with_pil(retina_file):
-								retina_image = Image.open(retina_file)
-								retina_detection_info = detect_image(retina_image,True)
-								paired_capinsets = retina_detection_info['suggested_capinsets']
-								capinsets_dic[retina_file] = paired_capinsets
-						print 'The cap insets of the paired high-resolution image is:%s' %(paired_capinsets,)
-
-
-					capinsets = tuple(max(x, y) for x, y in izip(capinsets,paired_capinsets))
-					print 'The final cap insets is :%s' %(capinsets,)
-
-
-				if 'target_directory' in args_dic and args_dic['target_directory'] is not None:
-					target_directory = args.target_directory
-				else:
-					target_directory = '.'
-
-				target_image = cap_image(image, capinsets,is_retina_image)
-				filename = path.split(f)[1]
-				if is_retina_image:
-					sep = '@2x.'
-				else:
-					sep = '.'
+					print 'This is a low-resolution image'
+	
+				image = Image.open(f)
+				print "Image size:%sx%s"%(image.size[0],image.size[1])
 				
-				filename_components = filename.rsplit(sep,1)
-
-
-				capstring = '-'.join("%d"%i for i in capinsets)
-				newfilename = '%s-%s%s%s'%(filename_components[0], capstring, sep, filename_components[1])
-				target_file_path = path.join(path.expanduser(target_directory),newfilename)
-				target_image.save(target_file_path,image.format)
-				print 'The resizable image generated successful:%s' %(target_file_path,)
-
-
-		else:
-			print "******************************************"
-			print "'%s' is not a valid image !" %(f)
+				if subparser_name == 'detect':
+					print "Starting to detect..."
+					detection_info = detect_image(image,is_retina_image)
+					print "Repeated rows intervals:%s" % (detection_info['repeatedrow_intervals'],)
+					print "Max row interval:%s" % (detection_info['max_repeatedrow_interval'],)
+					print "Repeated columns intervals:%s" % (detection_info['repeatedcol_intervals'],)
+					print "Max column interval:%s" % (detection_info['max_repeatedcol_interval'],)
+					print "Suggested cap insets:%s" % (detection_info['suggested_capinsets'],)
+				
+				if subparser_name == 'gen':
+					print "Starting to generate resizable image..."
+					args_dic = vars(args)
+					if 'capinsets' in args_dic and args_dic['capinsets'] is not None:
+						capinsets = tuple(i for i in args.capinsets)
+						print "Using cap insets with provided:%s"%(capinsets,)
+					else:
+						print "Cap insets for the resizable image will be got from the result of the detection"
+						if f in capinsets_dic:
+							capinsets = capinsets_dic[f]
+						else:
+							detection_info = detect_image(image,is_retina_image)
+							capinsets = detection_info['suggested_capinsets']
+							capinsets_dic[f] = capinsets
+						print "Cap insets got from the results with detection:%s" %(capinsets,)
+	
+						if is_retina_image:
+							unretina_file = ''.join(f.rsplit('@2x',1))
+							if unretina_file in capinsets_dic:
+								paired_capinsets = capinsets_dic[unretina_file]
+							else:
+								if check_image_with_pil(unretina_file):
+									unretina_image = Image.open(unretina_file)
+									unretina_detection_info = detect_image(unretina_image,False)
+									paired_capinsets = unretina_detection_info['suggested_capinsets']
+									capinsets_dic[unretina_file] = paired_capinsets
+							print 'The cap insets of the paired low-resolution image is:%s' %(paired_capinsets,)
+						else:
+							retina_file = '@2x.'.join(f.rsplit('.',1))
+							if retina_file in capinsets_dic:
+								paired_capinsets = capinsets_dic[retina_file]
+							else:
+								if check_image_with_pil(retina_file):
+									retina_image = Image.open(retina_file)
+									retina_detection_info = detect_image(retina_image,True)
+									paired_capinsets = retina_detection_info['suggested_capinsets']
+									capinsets_dic[retina_file] = paired_capinsets
+							print 'The cap insets of the paired high-resolution image is:%s' %(paired_capinsets,)
+	
+	
+						capinsets = tuple(max(x, y) for x, y in izip(capinsets,paired_capinsets))
+						print 'The final cap insets is :%s' %(capinsets,)
+	
+	
+					if 'target_directory' in args_dic and args_dic['target_directory'] is not None:
+						target_directory = args.target_directory
+					else:
+						target_directory = '.'
+	
+					target_image = cap_image(image, capinsets,is_retina_image)
+					filename = path.split(f)[1]
+					if is_retina_image:
+						sep = '@2x.'
+					else:
+						sep = '.'
+					
+					filename_components = filename.rsplit(sep,1)
+	
+	
+					capstring = '-'.join("%d"%i for i in capinsets)
+					newfilename = '%s-%s%s%s'%(filename_components[0], capstring, sep, filename_components[1])
+					target_file_path = path.join(path.expanduser(target_directory),newfilename)
+					target_image.save(target_file_path,image.format)
+					print 'The resizable image generated successful:%s' %(target_file_path,)
+	
+	
+			else:
+				print "******************************************"
+				print "'%s' is not a valid image !" %(f)
 
