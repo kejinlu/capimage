@@ -1,9 +1,8 @@
-A python script that generates resizable image from original image with cap insets.
+A python script that generates resizable image with cap insets.
 The script assumes you use Apple's prescribed high-resolution modifier (@2x) to name your high-resolution image.
 
-###Installation
+##Installation
 
----
 
 1. Use pip or easy_install to install [PIL](http://pypi.python.org/pypi/PIL) modules,  `sudo pip install PIL`
 2. Install capimage
@@ -12,9 +11,8 @@ The script assumes you use Apple's prescribed high-resolution modifier (@2x) to 
 		cd capimage
 		sudo python setup.py install
 
-###Usage
+##Usage
 
----
 
 1. Image Detection   
    	
@@ -37,5 +35,6 @@ The script assumes you use Apple's prescribed high-resolution modifier (@2x) to 
                         The directory where save the generated image
                         
 		capimage gen -c 20 20 20 20 my_image.png
+		capimage gen -t ./ ~/Desktop/*.png
 	
 If the optional argument `capinsets` is ignored, the script will get the capinsets from the result of the detection. For example,if you want to generate a resizable image for `my_image.png`,Besides that get the capinsets with the `my_image.png`, the script will also check for the capinsets of the high-resolution image if exists,and then figure out the final capinsets used for generating. 
