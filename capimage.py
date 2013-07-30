@@ -171,38 +171,42 @@ for filepath in args.source_file:
 	filepath = path.expanduser(filepath)
 	for f in iglob(filepath):
 		if check_image_with_pil(f):
+			print '************************************'
+			print 'Image:%s'%(f,)
 			is_retina_image = False
 			if '@2x.' in f:
+				print 'This is a high-resolution image'
 				is_retina_image = True
+			else:
+				print 'This is a low-resolution image'
 
 			image = Image.open(f)
+			print "Image size:%sx%s"%(image.size[0],image.size[1])
 			
 			if subparser_name == 'detect':
-				print "******************************************"
-				print "Detection For Image: '%s' Begin..." % (f)
-				print "Image Size:%sx%s"%(image.size[0],image.size[1])
+				print "Starting to detect..."
 				detection_info = detect_image(image,is_retina_image)
 				print "Repeated rows intervals:%s" % (detection_info['repeatedrow_intervals'],)
 				print "Max row interval:%s" % (detection_info['max_repeatedrow_interval'],)
 				print "Repeated columns intervals:%s" % (detection_info['repeatedcol_intervals'],)
 				print "Max column interval:%s" % (detection_info['max_repeatedcol_interval'],)
-				print "Suggested Cap Insets:%s" % (detection_info['suggested_capinsets'],)
+				print "Suggested cap insets:%s" % (detection_info['suggested_capinsets'],)
 			
 			if subparser_name == 'gen':
-				print "******************************************"
-				print "Generate resizable image for '%s'" % (f,)
+				print "Starting to generate resizable image..."
 				args_dic = vars(args)
 				if 'capinsets' in args_dic and args_dic['capinsets'] is not None:
 					capinsets = tuple(i for i in args.capinsets)
 					print "Using cap insets with provided:%s"%(capinsets,)
 				else:
+					print "Cap insets for the resizable image will be got from the result of the detection"
 					if f in capinsets_dic:
 						capinsets = capinsets_dic[f]
 					else:
 						detection_info = detect_image(image,is_retina_image)
 						capinsets = detection_info['suggested_capinsets']
 						capinsets_dic[f] = capinsets
-					print "Cap insets are not provided,using the results with detection:%s" %(capinsets,)
+					print "Cap insets got from the results with detection:%s" %(capinsets,)
 
 					if is_retina_image:
 						unretina_file = ''.join(f.rsplit('@2x',1))
@@ -214,6 +218,7 @@ for filepath in args.source_file:
 								unretina_detection_info = detect_image(unretina_image,False)
 								paired_capinsets = unretina_detection_info['suggested_capinsets']
 								capinsets_dic[unretina_file] = paired_capinsets
+						print 'The cap insets of the paired low-resolution image is:%s' %(paired_capinsets,)
 					else:
 						retina_file = '@2x.'.join(f.rsplit('.',1))
 						if retina_file in capinsets_dic:
@@ -224,8 +229,11 @@ for filepath in args.source_file:
 								retina_detection_info = detect_image(retina_image,True)
 								paired_capinsets = retina_detection_info['suggested_capinsets']
 								capinsets_dic[retina_file] = paired_capinsets
+						print 'The cap insets of the paired high-resolution image is:%s' %(paired_capinsets,)
 
-					final_capinsets = tuple(max(x, y) for x, y in izip(capinsets,paired_capinsets))
+
+					capinsets = tuple(max(x, y) for x, y in izip(capinsets,paired_capinsets))
+					print 'The final cap insets is :%s' %(capinsets,)
 
 
 				if 'target_directory' in args_dic and args_dic['target_directory'] is not None:
@@ -233,7 +241,7 @@ for filepath in args.source_file:
 				else:
 					target_directory = '.'
 
-				target_image = cap_image(image, final_capinsets,is_retina_image)
+				target_image = cap_image(image, capinsets,is_retina_image)
 				filename = path.split(f)[1]
 				if is_retina_image:
 					sep = '@2x.'
@@ -243,10 +251,11 @@ for filepath in args.source_file:
 				filename_components = filename.rsplit(sep,1)
 
 
-				capstring = '-'.join("%d"%i for i in final_capinsets)
+				capstring = '-'.join("%d"%i for i in capinsets)
 				newfilename = '%s-%s%s%s'%(filename_components[0], capstring, sep, filename_components[1])
 				target_file_path = path.join(path.expanduser(target_directory),newfilename)
 				target_image.save(target_file_path,image.format)
+				print 'The resizable image generated successful:%s' %(target_file_path,)
 
 
 		else:
