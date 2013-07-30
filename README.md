@@ -3,9 +3,9 @@ The script assumes you use Apple's prescribed high-resolution modifier (@2x) to 
 
 ##Installation
 
-
-1. Use pip or easy_install to install [PIL](http://pypi.python.org/pypi/PIL) module,  `sudo pip install PIL`
-2. Install capimage
+1. Mac | Linux 
+2. Use pip or easy_install to install [PIL](http://pypi.python.org/pypi/PIL) module,  `sudo pip install PIL`
+3. Install capimage
 	
 		git clone https://github.com/kejinlu/capimage.git
 		cd capimage
