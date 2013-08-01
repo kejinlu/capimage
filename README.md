@@ -1,5 +1,5 @@
 A python script that generates resizable image with cap insets.
-The script assumes you use Apple's prescribed high-resolution modifier (@2x) to name your high-resolution image.
+The script assumes you use Apple's prescribed high-resolution modifier (@2x) to name your high-resolution image.And the unit of capinsets is point not pixel.
 
 ##Installation
 
