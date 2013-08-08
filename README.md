@@ -1,6 +1,6 @@
 ##介绍
 在很多编程语言中都有resizable image这样的概念，比如android中的NinePatch graphic ，css3中的border image，微软的Nine-Grid Rendering，还有就是iOS中UIImage的resizable image。			
-<table border="1">
+<table>
   <tr>
     <td>1</td>
     <td>2</td>
