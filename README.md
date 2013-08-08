@@ -101,7 +101,7 @@ capimage.py是一个使用python的PIL库写的脚本，用于将一个普通的
 	Suggested cap insets:(21, 21, 22, 22)
 	
 	
-若运行 `capimage gen common_modal_bkg*.png`,便生成两个可伸缩的图片			
+若运行 `capimage gen common_modal_bkg*.png`,便生成两个可伸缩的图片，这个两个图片的capinsets均为 (21,21,22,22)			
 <img  width="44" height="44" src="https://raw.github.com/kejinlu/capimage/master/sample/common_modal_bkg-21-21-22-22.png
 "/>       
 <img  width="88" height="88" src="https://raw.github.com/kejinlu/capimage/master/sample/common_modal_bkg-21-21-22-22@2x.png
